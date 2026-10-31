@@ -1,40 +1,31 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>สูตรรูเล็ต</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2D3C59">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Roulette">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+const CACHE_NAME = 'roulette-v3';
+const ASSETS = [
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json'
+];
 
-<div class="wrap">
-  <h1>สูตร Roulette</h1>
-  <p class="subtitle">คลิคตัวออกล่าสุด แทงตามไฮไลต์เขียว</p>
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+  );
+  self.skipWaiting();
+});
 
-  <div class="status" id="status">
-    <div class="label">กรุณากดเลขที่ออก</div>
-  </div>
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      )
+    )
+  );
+  self.clients.claim();
+});
 
-  <div class="board">
-    <div class="row-zero">
-      <button class="num-btn green zero" data-n="0" onclick="select(0)">0</button>
-    </div>
-    <div class="grid-36" id="grid36"></div>
-  </div>
-
-  <div class="actions">
-    <button class="btn-clear" onclick="clearSelection()">ล้าง</button>
-  </div>
-
-</div>
-
-<script src="app.js"></script>
-</body>
-</html>
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(cached => cached || fetch(event.request))
+  );
+});
